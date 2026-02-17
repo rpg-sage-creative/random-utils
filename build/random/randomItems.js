@@ -1,9 +1,14 @@
 import { randomInt } from "node:crypto";
+import { MaxItemsCount } from "./const.js";
+import { safeIntegerTypeError } from "../internal/safeIntegerTypeError.js";
 export function randomItems(array, count, options) {
-    if (array.length === 0) {
+    if (typeof (count) !== "number") {
+        throw safeIntegerTypeError("count", 1, MaxItemsCount, count);
+    }
+    if (!array?.length) {
         return [];
     }
-    if (count < 1) {
+    if (count < 1 || count > MaxItemsCount) {
         return [];
     }
     const { unique } = typeof (options) === "boolean" ? { unique: options } : options ?? {};
@@ -16,20 +21,20 @@ export function randomItems(array, count, options) {
     return notUnique(array.length, count).map(index => array[index]);
 }
 function notUnique(arrayLength, count) {
-    const out = [];
-    do {
-        out.push(randomInt(arrayLength));
-    } while (out.length < count);
+    const out = new Array(count);
+    for (let i = 0; i < count; i++) {
+        out[i] = randomInt(arrayLength);
+    }
     return out;
 }
 function uniqueByIndex(arrayLength, count) {
-    const indexes = new Array(arrayLength).fill(0).map((_, i) => i);
+    const indexes = new Array(arrayLength).fill(undefined).map((_, i) => i);
     const total = Math.min(arrayLength, count);
-    const out = [];
-    do {
+    const out = new Array(total);
+    for (let i = 0; i < total; i++) {
         const randomIndex = randomInt(indexes.length);
-        out.push(indexes[randomIndex]);
+        out[i] = indexes[randomIndex];
         indexes.splice(randomIndex, 1);
-    } while (out.length < total);
+    }
     return out;
 }

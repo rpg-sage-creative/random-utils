@@ -1,4 +1,6 @@
 import { randomInt } from "node:crypto";
+import { MaxItemsCount } from "./const.js";
+import { safeIntegerTypeError } from "../internal/safeIntegerTypeError.js";
 
 type Unique = boolean | "byIndex" | "byValue";
 
@@ -32,12 +34,16 @@ export function randomItems<T>(array: T[], count: number, unique?: boolean): T[]
 export function randomItems<T>(array: T[], count: number, options?: Options): T[];
 
 export function randomItems<T>(array: T[], count: number, options?: boolean | Options): T[] {
+	if (typeof(count) !== "number") {
+		throw safeIntegerTypeError("count", 1, MaxItemsCount, count);
+	}
+
 	// early exit for bad arguments
-	if (array.length === 0) {
+	if (!array?.length) {
 		return [];
 		// throw RangeError("randomItems(array, count) array must have values");
 	}
-	if (count < 1) {
+	if (count < 1 || count > MaxItemsCount) {
 		return [];
 		// throw RangeError("randomItems(array, count) count must be greater than 0");
 	}
@@ -61,15 +67,12 @@ export function randomItems<T>(array: T[], count: number, options?: boolean | Op
 
 function notUnique(arrayLength: number, count: number): number[] {
 	// create return array
-	const out: number[] =  [];
+	const out = new Array<number>(count);
 
-	// iterate until we have our count
-	do {
-
-		// randomly generate index
-		out.push(randomInt(arrayLength));
-
-	} while (out.length < count);
+	// fill with random indexes
+	for (let i = 0; i < count; i++) {
+		out[i] = randomInt(arrayLength);
+	}
 
 	// return indexes
 	return out;
@@ -77,26 +80,25 @@ function notUnique(arrayLength: number, count: number): number[] {
 
 function uniqueByIndex(arrayLength: number, count: number): number[] {
 	// create starting index array (this lets us splice to shrink the list while making randomization simple)
-	const indexes = new Array(arrayLength).fill(0).map((_, i) => i);
+	const indexes = new Array(arrayLength).fill(undefined).map((_, i) => i);
 
 	// figure total to return
 	const total = Math.min(arrayLength, count);
 
 	// create return array
-	const out: number[] =  [];
+	const out = new Array<number>(total);
 
 	// iterate until we have our total
-	do {
+	for (let i = 0; i < total; i++) {
 		// randomly generate index
 		const randomIndex = randomInt(indexes.length);
 
 		// get an unused index from that random index
-		out.push(indexes[randomIndex]!);
+		out[i] = indexes[randomIndex]!;
 
 		// remove the index just used
 		indexes.splice(randomIndex, 1);
-
-	} while (out.length < total);
+	}
 
 	return out;
 }

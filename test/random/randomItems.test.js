@@ -1,5 +1,5 @@
 import { tagLiterals } from "@rsc-utils/template-literal-utils";
-import { randomItems } from "../../build/index.js";
+import { randomItems, MaxItemsCount } from "../../build/index.js";
 
 describe("random", () => {
 	describe("randomItems", () => {
@@ -7,8 +7,9 @@ describe("random", () => {
 		const array = [1,2,"a","b",{},new Date(),new Map(),"a"];
 		describe(tagLiterals`randomItems(array = ${array}, count, options)`, () => {
 
-			for (let count = -1; count < array.length + 5; count++) {
-				const expectedCount = Math.max(count, 0);
+			const counts = [-1, 0, 1, 2, 3, 4, 5, Math.pow(2, 32)]
+			for (const count of counts) {
+				const expectedCount = count < 1 || count > MaxItemsCount ? 0 : count;
 
 				test(tagLiterals`randomItems(array, ${count}).length === ${expectedCount}`, () => {
 					for (let i = 0; i < 1000; i++) {
