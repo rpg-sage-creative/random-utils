@@ -1,30 +1,35 @@
 import { tagLiterals } from "@rsc-utils/template-literal-utils";
-import { rollDie } from "../../build/index.js";
+import { rollDie, MaxDieSides } from "../../build/index.js";
 
 describe("random", () => {
 	describe("rollDie", () => {
 
+		const array = sides => sides < 1 || sides > MaxDieSides ? [0] : new Array(sides).fill().map((_, i) => i + 1);
+
 		const tests = [
 			// null counts as 0; but as it is typed we shouldn't have to worry about it
-			{ sides:null, values:[0], throws:false },
+			{ sides:null, throws:true },
 
-			{ sides:undefined, values:[], throws:true },
-			{ sides:"null", values:[], throws:true },
+			{ sides:undefined, throws:true },
+			{ sides:"null", throws:true },
 
-			{ sides:-1, values:[0], throws:false },
-			{ sides:0, values:[0], throws:false },
-			{ sides:1, values:[1], throws:false },
-			{ sides:2, values:[1,2], throws:false },
-			{ sides:3, values:[1,2,3], throws:false },
-			{ sides:4, values:[1,2,3,4], throws:false },
-			{ sides:6, values:[1,2,3,4,5,6], throws:false },
-			{ sides:8, values:[1,2,3,4,5,6,7,8], throws:false },
-			{ sides:10, values:[1,2,3,4,5,6,7,8,9,10], throws:false },
-			{ sides:12, values:[1,2,3,4,5,6,7,8,9,10,11,12], throws:false },
-			{ sides:20, values:new Array(20).fill(0).map((_,i)=>i+1), throws:false },
-			{ sides:30, values:new Array(30).fill(0).map((_,i)=>i+1), throws:false },
-			{ sides:100, values:new Array(100).fill(0).map((_,i)=>i+1), throws:false },
-		];
+			{ sides:-1, },
+			{ sides:0,},
+			{ sides:1,},
+			{ sides:1.2, throws:true },
+			{ sides:2, },
+			{ sides:3,},
+			{ sides:4, },
+			{ sides:6, },
+			{ sides:8, },
+			{ sides:10, },
+			{ sides:12,  },
+			{ sides:20,  },
+			{ sides:30,  },
+			{ sides:100,  },
+			{ sides:1000,  },
+			{ sides:10000, },
+		].map(({ sides, throws }) => ({ sides, throws, values:throws?[]:array(sides) }));
 
 		tests.forEach(({ sides, values, throws }) => {
 			if (!throws) {

@@ -1,54 +1,70 @@
 import { tagLiterals } from "@rsc-utils/template-literal-utils";
-import { rollDice } from "../../build/index.js";
+import { rollDice, MaxDiceCount, MaxDieSides } from "../../build/index.js";
 
 describe("random", () => {
 	describe("rollDice", () => {
 
-		const buildTest = (count, { sides, values, throws }) => {
-			if (throws && count > 0) return { count, sides, values:values??[], throws };
-			return {
-				count,
-				sides,
-				values: values??(count>0&&sides>0?new Array(sides).fill(0).map((_,i)=>i+1):[])
-			};
+		const buildTest = (count, { sides }) => {
+			if (typeof(count) !== "number") return { count, sides, values:[], throws:true };
+			if (typeof(sides) !== "number") return { count, sides, values:[], throws:true };
+			if (count < 1 || count > MaxDiceCount) return { count, sides, values:[] };
+			if (!sides || sides < 1 || sides > MaxDieSides) return { count, sides, values:[] };
+			if (sides === 1) return { count, sides, values:[count] };
+			if (sides !== Math.round(sides)) return { count, sides, values:[], throws:true };
+			return { count, sides, values: new Array(sides).fill().map((_, i)=>i + 1) };
 		};
 
 		const tests = [
 			// null counts as 0; but as it is typed we shouldn't have to worry about it
-			{ sides:null, values:[0], throws:false },
+			{ sides:null },
 
-			{ sides:undefined, values:[0], throws:true },
-			{ sides:"null", values:[0], throws:true },
+			{ sides:undefined },
+			{ sides:"null" },
 
-			{ sides:-1, values:[0], throws:false },
-			{ sides:0, values:[0], throws:false },
-			{ sides:1, throws:false },
-			{ sides:2,throws:false },
-			{ sides:3, throws:false },
-			{ sides:4,  throws:false },
-			{ sides:6,  throws:false },
-			{ sides:8,  throws:false },
-			{ sides:10, throws:false },
-			{ sides:12,  throws:false },
-			{ sides:20, throws:false },
-			{ sides:30, throws:false },
-			{ sides:100,  throws:false },
+			{ sides:-1     },
+			{ sides:0,     },
+			{ sides:1,     },
+			{ sides:1.2,   },
+			{ sides:2,     },
+			{ sides:3,     },
+			{ sides:4,     },
+			{ sides:6,     },
+			{ sides:8,     },
+			{ sides:10,    },
+			{ sides:12,    },
+			{ sides:20,    },
+			{ sides:30,    },
+			{ sides:100,   },
+			{ sides:500,   },
+			{ sides:1000,  },
+			{ sides:10000, },
 		]
-		.map((test) => [-1,0,1,2,3].map(count => buildTest(count, test)))
+		.map((test) => [null,-1,0,1,2,3,100,1000,"null"].map(count => buildTest(count, test)))
 		.flat();
 
 		tests.forEach(({ count, sides, values, throws }) => {
-			if (!throws) {
+			if (throws) {
+				test(tagLiterals`rollDice(${count}, ${sides}) to throw`, () => {
+					expect(() => rollDice(count, sides)).toThrow();
+				});
+			}else if (!values.length) {
+				test(tagLiterals`rollDice(${count}, ${sides}) to be []`, () => {
+					for (let i = 0; i < 1000; i++) {
+						expect(rollDice(count, sides)).toEqual([]);
+					}
+				});
+			}else if (sides === 1) {
+				test(tagLiterals`rollDice(${count}, ${sides}) to be ${[count]}`, () => {
+					for (let i = 0; i < 1000; i++) {
+						expect(rollDice(count, sides)).toEqual([count]);
+					}
+				});
+			}else {
 				test(tagLiterals`rollDice(${count}, ${sides}) to be in ${values.length?[values[0],"...",values[values.length-1]]:[]}`, () => {
 					for (let i = 0; i < 1000; i++) {
 						const rolls = rollDice(count, sides);
 						rolls.every(roll => expect(values.includes(roll)).toBe(true));
 					}
-				});
-
-			}else {
-				test(tagLiterals`rollDice(${count}, ${sides}) to throw`, () => {
-					expect(() => rollDice(count, sides)).toThrow();
 				});
 			}
 		});
